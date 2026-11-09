@@ -11,144 +11,47 @@ The central idea is simple: **one instruction is sent to four lanes, and each la
 ## Big Picture of TinyGPU (Architecture)
 
 ```mermaid
-flowchart TB
-    HOST["Host / testbench<br/>loads program and data; starts core; reads results"]
+flowchart LR
+    HOST["Host / testbench"]
+    IMEM["Instruction memory"]
+    SCHED["Scheduler<br/>fetches instructions and controls blocks"]
+    DEC["Decoder<br/>reads each instruction"]
+    DMEM["Shared data memory"]
 
-    subgraph CORE["TinyGPU core"]
-        direction TB
-
-        subgraph CONTROL["Shared instruction and control path"]
-            direction LR
-            IMEM["Instruction memory<br/>imem.v"]
-            SCHED["Scheduler<br/>PC, instruction register,<br/>IDLE / FETCH / EXEC,<br/>block index"]
-            DEC["Decoder<br/>splits instruction into<br/>op, rd, rs, rt, immediate"]
-            IMEM -->|"instruction at PC"| SCHED
-            SCHED -->|"PC"| IMEM
-            SCHED -->|"instruction register"| DEC
-            DEC -->|"op: check for RET"| SCHED
-        end
-
-        subgraph LANES["Four lanes: same instruction, different data"]
-            direction LR
-
-            subgraph L0["Lane 0 (threadIdx = 0)"]
-                direction TB
-                MASK0["Thread mask<br/>active = global index < thread count"]
-                RF0["Register file<br/>r0-r12 plus special r13-r15"]
-                ALU0["ALU<br/>ADD / SUB / MUL"]
-                WB0["Write-back mux<br/>ALU / constant / loaded data"]
-                CTRL0["Write enables<br/>EXEC + active + operation"]
-                RF0 -->|"rs and rt values"| ALU0
-                ALU0 --> WB0
-                WB0 -->|"write data"| RF0
-                RF0 -->|"rs: load/store address"| DMEM
-                RF0 -->|"rt: store data"| DMEM
-                DMEM -->|"loaded value"| WB0
-                MASK0 --> CTRL0
-                CTRL0 -->|"register write enable"| RF0
-                CTRL0 -->|"store enable"| DMEM
-            end
-
-            subgraph L1["Lane 1 (threadIdx = 1)"]
-                direction TB
-                MASK1["Thread mask<br/>active = global index < thread count"]
-                RF1["Register file<br/>r0-r12 plus special r13-r15"]
-                ALU1["ALU<br/>ADD / SUB / MUL"]
-                WB1["Write-back mux<br/>ALU / constant / loaded data"]
-                CTRL1["Write enables<br/>EXEC + active + operation"]
-                RF1 -->|"rs and rt values"| ALU1
-                ALU1 --> WB1
-                WB1 -->|"write data"| RF1
-                RF1 -->|"rs: load/store address"| DMEM
-                RF1 -->|"rt: store data"| DMEM
-                DMEM -->|"loaded value"| WB1
-                MASK1 --> CTRL1
-                CTRL1 -->|"register write enable"| RF1
-                CTRL1 -->|"store enable"| DMEM
-            end
-
-            subgraph L2["Lane 2 (threadIdx = 2)"]
-                direction TB
-                MASK2["Thread mask<br/>active = global index < thread count"]
-                RF2["Register file<br/>r0-r12 plus special r13-r15"]
-                ALU2["ALU<br/>ADD / SUB / MUL"]
-                WB2["Write-back mux<br/>ALU / constant / loaded data"]
-                CTRL2["Write enables<br/>EXEC + active + operation"]
-                RF2 -->|"rs and rt values"| ALU2
-                ALU2 --> WB2
-                WB2 -->|"write data"| RF2
-                RF2 -->|"rs: load/store address"| DMEM
-                RF2 -->|"rt: store data"| DMEM
-                DMEM -->|"loaded value"| WB2
-                MASK2 --> CTRL2
-                CTRL2 -->|"register write enable"| RF2
-                CTRL2 -->|"store enable"| DMEM
-            end
-
-            subgraph L3["Lane 3 (threadIdx = 3)"]
-                direction TB
-                MASK3["Thread mask<br/>active = global index < thread count"]
-                RF3["Register file<br/>r0-r12 plus special r13-r15"]
-                ALU3["ALU<br/>ADD / SUB / MUL"]
-                WB3["Write-back mux<br/>ALU / constant / loaded data"]
-                CTRL3["Write enables<br/>EXEC + active + operation"]
-                RF3 -->|"rs and rt values"| ALU3
-                ALU3 --> WB3
-                WB3 -->|"write data"| RF3
-                RF3 -->|"rs: load/store address"| DMEM
-                RF3 -->|"rt: store data"| DMEM
-                DMEM -->|"loaded value"| WB3
-                MASK3 --> CTRL3
-                CTRL3 -->|"register write enable"| RF3
-                CTRL3 -->|"store enable"| DMEM
-            end
-        end
-
-        DMEM["Shared data memory<br/>dmem.v<br/>one lane port per lane"]
-        BLOCKDIM["blockDim = 4<br/>constant for this core"]
-
-        DEC -.->|"op, rd, rs, rt, immediate"| RF0
-        DEC -.->|"op, rd, rs, rt, immediate"| ALU0
-        DEC -.->|"op and immediate"| WB0
-        DEC -.->|"op, rd, rs, rt, immediate"| RF1
-        DEC -.->|"op, rd, rs, rt, immediate"| ALU1
-        DEC -.->|"op and immediate"| WB1
-        DEC -.->|"op, rd, rs, rt, immediate"| RF2
-        DEC -.->|"op, rd, rs, rt, immediate"| ALU2
-        DEC -.->|"op and immediate"| WB2
-        DEC -.->|"op, rd, rs, rt, immediate"| RF3
-        DEC -.->|"op, rd, rs, rt, immediate"| ALU3
-        DEC -.->|"op and immediate"| WB3
-
-        SCHED -.->|"EXEC, block index"| CTRL0
-        SCHED -.->|"EXEC, block index"| CTRL1
-        SCHED -.->|"EXEC, block index"| CTRL2
-        SCHED -.->|"EXEC, block index"| CTRL3
-        SCHED -.->|"block index"| MASK0
-        SCHED -.->|"block index"| MASK1
-        SCHED -.->|"block index"| MASK2
-        SCHED -.->|"block index"| MASK3
-        SCHED -.->|"blockIdx (r13)"| RF0
-        SCHED -.->|"blockIdx (r13)"| RF1
-        SCHED -.->|"blockIdx (r13)"| RF2
-        SCHED -.->|"blockIdx (r13)"| RF3
-        BLOCKDIM -.->|"blockDim (r14)"| RF0
-        BLOCKDIM -.->|"blockDim (r14)"| RF1
-        BLOCKDIM -.->|"blockDim (r14)"| RF2
-        BLOCKDIM -.->|"blockDim (r14)"| RF3
-        HOST -->|"start, thread count"| SCHED
-        HOST <-->|"load program"| IMEM
-        HOST <-->|"load inputs / read results"| DMEM
+    subgraph ONE_LANE["One lane (the processor has four copies)"]
+        direction LR
+        MASK["Mask<br/>is this thread in range?"]
+        RF["Registers<br/>stores this lane's values"]
+        ALU["ALU<br/>does the math"]
+        WB["Write-back<br/>chooses what to save"]
+        ENABLE["Write control<br/>EXEC and active?"]
+        RF -->|"values to calculate"| ALU
+        ALU --> WB
+        WB -->|"save result"| RF
+        MASK --> ENABLE
+        ENABLE -->|"register write"| RF
     end
+
+    HOST -->|"loads program"| IMEM
+    HOST -->|"loads input data"| DMEM
+    HOST -->|"start + thread count"| SCHED
+    IMEM -->|"instruction"| SCHED
+    SCHED -->|"next address (PC)"| IMEM
+    SCHED -->|"instruction"| DEC
+    DEC -->|"register numbers"| RF
+    DEC -->|"operation"| ALU
+    DEC -->|"constant"| WB
+    SCHED -.->|"execute + block number"| ENABLE
+    RF -->|"address + store value"| DMEM
+    DMEM -->|"loaded value"| WB
+    ENABLE -->|"store enable"| DMEM
+    HOST <-->|"reads results"| DMEM
 ```
 
-Each lane contains the same basic datapath: a private register file, an
-ALU, and a write-back mux. The decoder broadcasts the instruction fields
-to every lane. The scheduler tells the lanes when to execute and which
-block is running. Each lane's mask and write-enable logic prevents an
-out-of-range lane from changing registers or storing data. All four lanes
-connect to the shared data memory, while the host uses its separate
-load/read interface.
+The box is one lane; the processor has four copies: lane 0, 1, 2, and 3.
+Each copy has its own registers, ALU, and mask. The decoder sends the same
+instruction to every copy, but each works on different values. They use the
+shared data memory to load inputs and store results.
 
 The host in this project is going to be the testbench. It loads the
 program into instruction memory and the arrays into data memory, starts the processor, waits for it to finish, and checks the answers.
