@@ -89,16 +89,16 @@ to memory.
 
 ## Source files and components
 
-| File | What it does |
-|---|---|
-| [`src/alu.v`](src/alu.v) | Computes arithmetic results such as addition, subtraction, and multiplication from the two input values. |
-| [`src/decoder.v`](src/decoder.v) | Splits the 16-bit instruction into its opcode (operation code), register numbers, and immediate value. |
-| [`src/regfile.v`](src/regfile.v) | Stores each lane's general-purpose registers, reads two values at once, and provides the read-only special registers. |
-| [`src/core.v`](src/core.v) | To be documented. |
-| [`src/dmem.v`](src/dmem.v) | To be documented. |
-| [`src/imem.v`](src/imem.v) | To be documented. |
-| [`src/isa.vh`](src/isa.vh) | To be documented. |
-| [`src/lane.v`](src/lane.v) | To be documented. |
-| [`src/scheduler.v`](src/scheduler.v) | To be documented. |
-| [`src/thread_mask.v`](src/thread_mask.v) | To be documented. |
-| [`src/writeback.v`](src/writeback.v) | To be documented. |
+| File | What it is | What it does |
+|---|---|---|
+| [`src/alu.v`](src/alu.v) | Arithmetic Logic Unit | Computes arithmetic results such as addition, subtraction, and multiplication from the two input values. |
+| [`src/decoder.v`](src/decoder.v) | Decoder | Splits the 16-bit instruction into its opcode (operation code), register numbers, and immediate value. |
+| [`src/regfile.v`](src/regfile.v) | Register File | Stores each lane's general-purpose registers, reads two values at once, and provides the read-only special registers. |
+| [`src/core.v`](src/core.v) | Core | To be documented. |
+| [`src/dmem.v`](src/dmem.v) | Shared Data Memory | To be documented. |
+| [`src/imem.v`](src/imem.v) | Instruction Memory | To be documented. |
+| [`src/isa.vh`](src/isa.vh) | Instruction Set | To be documented. |
+| [`src/lane.v`](src/lane.v) | Lane | To be documented. |
+| [`src/scheduler.v`](src/scheduler.v) | Scheduler | To be documented. |
+| [`src/thread_mask.v`](src/thread_mask.v) |  | To be documented. |
+| [`src/writeback.v`](src/writeback.v) |  | To be documented. |
