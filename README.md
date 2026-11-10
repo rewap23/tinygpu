@@ -10,43 +10,7 @@ The central idea is simple: **one instruction is sent to four lanes, and each la
 
 ## Big Picture of TinyGPU (Architecture)
 
-```mermaid
-flowchart LR
-    HOST["Host / testbench"]
-    IMEM["Instruction memory"]
-    SCHED["Scheduler<br/>fetches instructions and controls blocks"]
-    DEC["Decoder<br/>reads each instruction"]
-    DMEM["Shared data memory"]
-
-    subgraph ONE_LANE["One lane (the processor has four copies)"]
-        direction LR
-        MASK["Mask<br/>is this thread in range?"]
-        RF["Registers<br/>stores this lane's values"]
-        ALU["ALU<br/>does the math"]
-        WB["Write-back<br/>chooses what to save"]
-        ENABLE["Write control<br/>EXEC and active?"]
-        RF -->|"values to calculate"| ALU
-        ALU --> WB
-        WB -->|"save result"| RF
-        MASK --> ENABLE
-        ENABLE -->|"register write"| RF
-    end
-
-    HOST -->|"loads program"| IMEM
-    HOST -->|"loads input data"| DMEM
-    HOST -->|"start + thread count"| SCHED
-    IMEM -->|"instruction"| SCHED
-    SCHED -->|"next address (PC)"| IMEM
-    SCHED -->|"instruction"| DEC
-    DEC -->|"register numbers"| RF
-    DEC -->|"operation"| ALU
-    DEC -->|"constant"| WB
-    SCHED -.->|"execute + block number"| ENABLE
-    RF -->|"address + store value"| DMEM
-    DMEM -->|"loaded value"| WB
-    ENABLE -->|"store enable"| DMEM
-    HOST <-->|"reads results"| DMEM
-```
+![tinygpu architecture](arch.png)
 
 The box is one lane; the processor has four copies: lane 0, 1, 2, and 3.
 Each copy has its own registers, ALU, and mask. The decoder sends the same
@@ -116,3 +80,19 @@ block has an out-of-range lane. The **thread mask** checks whether that
 lane's index is less than the requested thread count. An inactive lane
 still receives the instructions, but it cannot write a register or store
 to memory.
+
+## Source files and components
+
+| File | What it does |
+|---|---|
+| [`src/alu.v`](src/alu.v) | Computes arithmetic results such as addition, subtraction, and multiplication from the two input values. |
+| [`src/decoder.v`](src/decoder.v) | Splits the 16-bit instruction into its opcode (operation code), register numbers, and immediate value. |
+| [`src/regfile.v`](src/regfile.v) | Stores each lane's general-purpose registers, reads two values at once, and provides the read-only special registers. |
+| [`src/core.v`](src/core.v) | To be documented. |
+| [`src/dmem.v`](src/dmem.v) | To be documented. |
+| [`src/imem.v`](src/imem.v) | To be documented. |
+| [`src/isa.vh`](src/isa.vh) | To be documented. |
+| [`src/lane.v`](src/lane.v) | To be documented. |
+| [`src/scheduler.v`](src/scheduler.v) | To be documented. |
+| [`src/thread_mask.v`](src/thread_mask.v) | To be documented. |
+| [`src/writeback.v`](src/writeback.v) | To be documented. |
