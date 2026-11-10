@@ -6,7 +6,7 @@ This project is a model of a tiny GPU-like processor written in Verilog. It runs
 C[i] = A[i] + B[i]
 ```
 
-The central idea is simple: **one instruction is sent to four lanes, and each lane applies it to its own data.** That is called SIMD/SIMT-style execution. SIMD stands for Same Instruction, Multiple Data. This project is small enough to simulate on a laptop; it is not a complete or commercially realistic GPU.
+The central idea: **one instruction is sent to four lanes, and each lane applies it to its own data.** That is called SIMD/SIMT-style execution. SIMD stands for Same Instruction, Multiple Data. This project is small enough to simulate on a laptop; it is not a complete or commercially realistic GPU.
 
 ## Big Picture of TinyGPU (Architecture)
 
@@ -17,8 +17,14 @@ Each copy has its own registers, ALU, and mask. The decoder sends the same
 instruction to every copy, but each works on different values. They use the
 shared data memory to load inputs and store results.
 
-The host in this project is going to be the testbench. It loads the
-program into instruction memory and the arrays into data memory, starts the processor, waits for it to finish, and checks the answers.
+1. The **host** in this project is the **testbench**. The host/testbench loads the program into instruction memory and input values(the arrays) into data memory, starts the processor.
+2. The **scheduler** fetches an instruction and sends it to the **decoder**, which identifies the operation code and register numbers.
+3. The **decoder** sends these signals to all **lanes**. Each lane reads its own values from its private memory, or **register file**. 
+4. Each lane's **ALU** performs the calculation. Anything that needs to be loaded or stored, the lane will add to the shared data memory.
+5. The **writeback** will then choose the result to save. 
+6. On the clock edge, active lanes store results in their registers (stores instructions write to memory).
+7. The scheduler moves to the next instruction or block, and repeats.
+8. When the program finishes, the host reads the results from the data memory.
 
 ## What is a lane?
 
@@ -39,9 +45,9 @@ per lane.
 
 The scheduler has three states:
 
-1. **IDLE:** Wait for the host to start the program.
-2. **FETCH:** Read the instruction at the program counter (PC).
-3. **EXEC:** Decode and run that instruction on the lanes.
+1. **IDLE:** Waits for the host to start the program.
+2. **FETCH:** Reads the instruction at the program counter (PC).
+3. **EXEC:** Decodes and run that instruction on the lanes.
 
 The processor uses one FETCH cycle and one EXEC cycle per instruction.
 During EXEC, the lanes' register or memory writes happen at the rising edge
