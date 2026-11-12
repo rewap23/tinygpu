@@ -25,14 +25,14 @@ module alu #(
 );
     `include "isa.vh"
 
-    // always @(*) = "re-evaluate whenever any input changes" = combinational.
+    // always @(*) = "re-evaluate whenever any input changes" = combinational logic
     // `y` is declared `reg` only because it's assigned in an always block;
     // it does NOT become a flip-flop. (No clock edge => no flip-flop.)
     always @(*) begin
         case (op)
-            // TODO 1a: add three case items: OP_ADD, OP_SUB, OP_MUL.
-            //   Each is one line, e.g.   OP_ADD: y = ... ;
-            //   Test: make alu SRC=starter
+            OP_ADD: y = a + b;          // addition
+            OP_SUB: y = a - b;          // subtraction
+            OP_MUL: y = a * b;          // upper bits dropped
             default: y = {WIDTH{1'b0}};  // a default prevents an inferred latch
         endcase
     end
