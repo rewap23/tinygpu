@@ -1,6 +1,11 @@
 // ============================================================================
 // scheduler.v -- the control unit: decides what happens on every clock tick
 // ============================================================================
+// The scheduler contains a FINITE STATE MACHINE (FSM):
+//    An FSM is a circuit that keeps of which step it's on and changes steps
+//    based on inputs. FSM is a system with a limited set of states. It stays
+//    in one state until an event or condition tells it to switch.
+//    
 // OVERVIEW
 //   GPU's traffic controller:
 //    It tracks which instruction is next, When the lanes
