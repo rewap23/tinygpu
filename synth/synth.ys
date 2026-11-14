@@ -1,0 +1,18 @@
+# synth.ys -- turn the RTL into gates and count them.
+# `synth` = generic flow: parse -> elaborate -> optimize -> map to simple
+# cells ($_AND_, $_XOR_, $_MUX_, $_DFF_P_ ...). Hierarchy is kept so the
+# report shows the cost of each module separately.
+
+read_verilog -I. alu.v regfile.v writeback.v lane.v decoder.v scheduler.v thread_mask.v imem.v dmem.v core.v
+hierarchy -top core
+synth -top core
+stat
+
+# Same design mapped to a real, cheap FPGA (Lattice iCE40).
+# LUT4 = a 4-input lookup table, the FPGA's universal logic block.
+# SB_DFF* = flip-flops. SB_MAC16 would be a hard multiplier.
+
+design -reset
+read_verilog -I. alu.v regfile.v writeback.v lane.v decoder.v scheduler.v thread_mask.v imem.v dmem.v core.v
+synth_ice40 -top core
+stat

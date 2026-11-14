@@ -1,0 +1,15 @@
+# Draw the ALU as gates. WIDTH=2 so the picture stays readable --
+# the 8-bit version is the same structure, just wider
+read_verilog -I. alu.v
+
+chparam -set WIDTH 2 alu          # shrink the ALU to 2 bits so the drawing is readable
+
+hierarchy -top alu
+
+proc; opt; techmap; opt -purge    # the same steps synth runs, done by hand
+
+abc -g AND,OR,XOR,MUX             # only allow these 4 gate types, so the picture uses familiar symbols
+
+opt_clean
+
+show -format svg -prefix ../build/src/alu_2bit -notitle   # draw it (needs graphviz)
